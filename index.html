@@ -161,6 +161,8 @@ h1,h2,#htitle,#hcount,.heroTxt .eyebrow,.stat b,.stat span,.big .t1,.crow .nm,.c
 .memo{font-size:13.8px}
 .line{font-size:12.5px}
 
+
+
 /* ===== side drawer ===== */
 #menuBtn{display:flex;align-items:center;justify-content:center;width:34px;height:34px;flex:0 0 34px;
   border:none;background:none;cursor:pointer;color:var(--ink);padding:0}
@@ -192,6 +194,10 @@ h1,h2,#htitle,#hcount,.heroTxt .eyebrow,.stat b,.stat span,.big .t1,.crow .nm,.c
 .ditem .ct{margin-left:auto;font-size:12.5px;color:var(--sub)}
 .ditem.on{color:var(--accent)}
 .dline{height:1px;background:var(--line);margin:10px 20px}
+
+.tab .ti.chev{font-size:27px;line-height:.7;filter:none;opacity:.65;font-weight:700;
+  transform:translateY(1px)}
+.tab.dis{opacity:.3;pointer-events:none}
 </style>
 </head>
 <body>
@@ -456,9 +462,9 @@ h1,h2,#htitle,#hcount,.heroTxt .eyebrow,.stat b,.stat span,.big .t1,.crow .nm,.c
   <div id="dbody"></div>
 </aside>
 <nav id="tabs"><div class="tin">
+  <button class="tab dis" id="tabBack" data-act="back" type="button"><span class="ti chev">‹</span><span class="tl">뒤로</span></button>
   <button class="tab on" data-tab="home" type="button"><span class="ti">🏠</span><span class="tl">홈</span></button>
   <button class="tab" data-tab="cats" type="button"><span class="ti">🍽️</span><span class="tl">종류</span></button>
-  <button class="tab" data-tab="search" type="button"><span class="ti">🔍</span><span class="tl">검색</span></button>
 </div></nav>
 
 <script>
@@ -590,8 +596,7 @@ function show(v){
   view=v;
   $$('.view').forEach(function(x){x.classList.remove('on')});
   $('#v-'+v).classList.add('on');
-  hd.classList.toggle('sub', v==='list');
-  var tabMap={home:'home',cats:'cats',list:'cats',search:'search'};
+  var tabMap={home:'home',cats:'cats',list:'cats',search:''};
   $$('.tab').forEach(function(t){t.classList.toggle('on', t.dataset.tab===tabMap[v])});
 
   if(v==='home'){ htitle.textContent='후쿠오카 맛집'; hcount.textContent=''; }
@@ -629,7 +634,7 @@ function renderList(){
     b.className='crow'; b.type='button';
     b.innerHTML='<span class="em">'+c.ic+'</span><span class="nm">'+esc(c.name)+
       '</span><span class="ct">'+n+'곳</span><span class="ar">›</span>';
-    b.addEventListener('click',function(){ openCat(c.id) });
+    b.addEventListener('click',function(){ navTo({v:'cat', id:c.id}) });
     wrap.appendChild(b);
   });
 })();
@@ -645,27 +650,20 @@ function renderList(){
 $$('.big').forEach(function(b){
   b.addEventListener('click',function(){
     var g=b.dataset.go;
-    if(g==='random'){
-      var s=SPOTS[Math.floor(Math.random()*SPOTS.length)];
-      curCat=null;
-      htitle.textContent='🎲 오늘의 추천';
-      hcount.textContent='';
-      fill($('#list'),[s]);
-      $('#sortbar').style.display='none';
-      show('list');
-      htitle.textContent='🎲 오늘의 추천'; hcount.textContent='';
-      return;
-    }
-    $('#sortbar').style.display='';
-    show(g);
+    if(g==='random'){ navTo({v:'random', i:Math.floor(Math.random()*SPOTS.length)}); return; }
+    navTo({v:g});
   });
 });
 
 $$('.tab').forEach(function(t){
-  t.addEventListener('click',function(){ $('#sortbar').style.display=''; show(t.dataset.tab) });
+  t.addEventListener('click',function(){
+    if(t.dataset.act==='back'){ goBack(); return; }
+    if(t.dataset.tab==='home'){ navStack.length=0; render({v:'home'}); return; }
+    navTo({v:t.dataset.tab});
+  });
 });
 
-$('#back').addEventListener('click',function(){ $('#sortbar').style.display=''; show('cats') });
+$('#back').addEventListener('click',goBack);
 
 $('#sortbar').addEventListener('click',function(e){
   var b=e.target.closest('.chip'); if(!b||!curCat) return;
@@ -685,6 +683,47 @@ $('#q').addEventListener('input',function(){
 window.addEventListener('scroll',function(){ hd.classList.toggle('stuck', window.scrollY>4) });
 
 /* ===== side drawer ===== */
+
+/* ===== navigation stack (back button) ===== */
+var navStack=[], curSt={v:'home'};
+
+function showRandom(i){
+  var sp=SPOTS[i];
+  curCat=null; fill($('#list'),[sp]); $('#sortbar').style.display='none';
+  show('list'); htitle.textContent='🎲 오늘의 추천'; hcount.textContent='';
+}
+
+function render(st){
+  if(st.v==='cat'){ $('#sortbar').style.display=''; openCat(st.id); }
+  else if(st.v==='random'){ showRandom(st.i); }
+  else { $('#sortbar').style.display=''; show(st.v); }
+  curSt=st; syncBack();
+}
+
+function syncBack(){
+  var can = navStack.length>0;
+  hd.classList.toggle('sub', can);
+  var tb=$('#tabBack'); if(tb) tb.classList.toggle('dis', !can);
+}
+
+function navTo(st){
+  navStack.push(curSt);
+  render(st);
+  try{ history.pushState({d:navStack.length},'') }catch(e){}
+}
+
+function goBack(){
+  if(!navStack.length) return;
+  try{ history.back() }catch(e){ popBack() }
+}
+
+function popBack(){
+  if(!navStack.length){ render({v:'home'}); return; }
+  render(navStack.pop());
+}
+
+window.addEventListener('popstate', popBack);
+
 (function(){
   var drawer=$('#drawer'), scrim=$('#scrim'), body=$('#dbody');
 
@@ -704,12 +743,10 @@ window.addEventListener('scroll',function(){ hd.classList.toggle('stuck', window
 
   var s1=document.createElement('div'); s1.className='dsect'; s1.textContent='메뉴';
   body.appendChild(s1);
-  body.appendChild(row('🏠','홈',null,function(){ $('#sortbar').style.display=''; show('home') },'home'));
-  body.appendChild(row('🔍','검색',null,function(){ $('#sortbar').style.display=''; show('search') },'search'));
+  body.appendChild(row('🏠','홈',null,function(){ navStack.length=0; render({v:'home'}) },'home'));
+  body.appendChild(row('🔍','검색',null,function(){ navTo({v:'search'}) },'search'));
   body.appendChild(row('🎲','오늘 뭐 먹지?',null,function(){
-      var sp=SPOTS[Math.floor(Math.random()*SPOTS.length)];
-      curCat=null; fill($('#list'),[sp]); $('#sortbar').style.display='none';
-      show('list'); htitle.textContent='🎲 오늘의 추천'; hcount.textContent='';
+      navTo({v:'random', i:Math.floor(Math.random()*SPOTS.length)});
     },'random'));
 
   var d=document.createElement('div'); d.className='dline'; body.appendChild(d);
@@ -717,7 +754,7 @@ window.addEventListener('scroll',function(){ hd.classList.toggle('stuck', window
   body.appendChild(s2);
   CATS.forEach(function(c){
     body.appendChild(row(c.ic, c.name, SPOTS.filter(function(s){return s.c===c.id}).length,
-      function(){ openCat(c.id) }, 'cat:'+c.id));
+      function(){ navTo({v:'cat', id:c.id}) }, 'cat:'+c.id));
   });
 
   function mark(){
