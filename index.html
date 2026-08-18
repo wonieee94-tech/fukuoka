@@ -532,22 +532,12 @@ h1,h2,#htitle,#hcount,.heroTxt .eyebrow,.stat b,.stat span,.big .t1,.crow .nm,.c
         </div>
       </div>
 
-      <div class="finfo">
-        휴대 수하물 1인 1개 · 10kg · 55×40×20cm
-      </div>
     </div>
 
     <button class="big" data-go="cats">
       <span class="em">🍽️</span>
       <span class="tt"><span class="t1">종류별로 보기</span>
         <span class="t2">야키니쿠 · 스시 · 모츠나베 …</span></span>
-      <span class="ar">›</span>
-    </button>
-
-    <button class="big" data-go="search">
-      <span class="em">🔍</span>
-      <span class="tt"><span class="t1">검색</span>
-        <span class="t2">가게 이름 · 메뉴 · 내 메모</span></span>
       <span class="ar">›</span>
     </button>
 
@@ -600,13 +590,6 @@ h1,h2,#htitle,#hcount,.heroTxt .eyebrow,.stat b,.stat span,.big .t1,.crow .nm,.c
     <div id="shopList"></div>
   </section>
 
-  <section class="view" id="v-search">
-    <div class="searchbox">
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>
-      <input type="search" id="q" placeholder="가게 이름 · 메뉴 · 메모" autocomplete="off">
-    </div>
-    <div class="list" id="sresult"></div>
-  </section>
 </main>
 
 <div id="jpModal"><div class="jpbox">
@@ -747,11 +730,10 @@ function show(v){
   view=v;
   $$('.view').forEach(function(x){x.classList.remove('on')});
   $('#v-'+v).classList.add('on');
-  var tabMap={home:'home',cats:'cats',list:'cats',search:'',shopping:''};
+  var tabMap={home:'home',cats:'cats',list:'cats',shopping:''};
   $$('.tab').forEach(function(t){t.classList.toggle('on', t.dataset.tab===tabMap[v])});
   if(v==='home'){ htitle.textContent='후쿠오카 맛집'; hcount.textContent=''; }
   if(v==='cats'){ htitle.textContent='종류별로 보기'; hcount.textContent=SPOTS.length+'곳'; }
-  if(v==='search'){ htitle.textContent='검색'; hcount.textContent=''; setTimeout(function(){$('#q').focus()},80); }
   if(v==='shopping'){ htitle.textContent='🛒 쇼핑리스트'; renderShop(); }
   if(v==='jp'){ htitle.textContent='🗣️ 기초 일본어'; hcount.textContent=JP.length+'문장'; }
   window.scrollTo({top:0});
@@ -1197,7 +1179,6 @@ window.addEventListener('popstate', popBack);
   body.appendChild(row('🏠','홈',null,function(){ navStack.length=0; render({v:'home'}) },'home'));
   body.appendChild(row('🛒','쇼핑리스트',null,function(){ navTo({v:'shopping'}) },'shopping'));
   body.appendChild(row('🗣️','기초 일본어',null,function(){ navTo({v:'jp'}) },'jp'));
-  body.appendChild(row('🔍','검색',null,function(){ navTo({v:'search'}) },'search'));
   var dl=document.createElement('div'); dl.className='dline'; body.appendChild(dl);
   var s2=document.createElement('div'); s2.className='dsect'; s2.textContent='종류별로 보기';
   body.appendChild(s2);
@@ -1233,13 +1214,6 @@ $('#sortbar').addEventListener('click',function(e){
   sort=b.dataset.s;
   $$('#sortbar .chip').forEach(function(c){c.classList.toggle('on',c===b)});
   renderList();
-});
-$('#q').addEventListener('input',function(){
-  var k=this.value.trim().toLowerCase();
-  if(!k){ $('#sresult').innerHTML=''; return; }
-  fill($('#sresult'),SPOTS.filter(function(s){
-    return (s.n+s.g+s.m).toLowerCase().indexOf(k)>=0;
-  }));
 });
 $('#myAdd').addEventListener('click',addMy);
 $('#myInput').addEventListener('keydown',function(e){ if(e.key==='Enter') addMy() });
